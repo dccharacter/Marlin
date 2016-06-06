@@ -1094,7 +1094,6 @@ const bool Z_MIN_PROBE_ENDSTOP_INVERTING = false; // set to true to invert the l
 //#define X_ENDSTOP_SERVO_NR 1
 //#define Y_ENDSTOP_SERVO_NR 2
 #define Z_ENDSTOP_SERVO_NR 0
-и
 #define SERVO_ENDSTOP_ANGLES {{0,0}, {0,0}, {0,150}} // X,Y,Z Axis Extend and Retract angles
 
 // Servo deactivation
