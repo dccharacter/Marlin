@@ -77,7 +77,7 @@
 #define Z_DIR_PIN          48
 #define Z_ENABLE_PIN       62
 #define Z_MIN_PIN          18
-#define Z_MAX_PIN          19
+#define Z_MAX_PIN          -1 //19 - pin reused for Z-PROBE
 
 #define E0_STEP_PIN        26
 #define E0_DIR_PIN         28
@@ -96,7 +96,7 @@
 
 #if ENABLED(Z_MIN_PROBE_ENDSTOP)
   // Define a pin to use as the signal pin on Arduino for the Z_PROBE endstop.
-  #define Z_MIN_PROBE_PIN  32
+  #define Z_MIN_PROBE_PIN  19
 #endif
 
 #if ENABLED(FILAMENT_RUNOUT_SENSOR)
@@ -173,8 +173,8 @@
     #if ENABLED(REPRAP_DISCOUNT_SMART_CONTROLLER)
       #define BEEPER_PIN 37
 
-      #define BTN_EN1 31
-      #define BTN_EN2 33
+      #define BTN_EN1 33
+      #define BTN_EN2 31
       #define BTN_ENC 35
 
       #define SD_DETECT_PIN 49
