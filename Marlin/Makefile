@@ -42,10 +42,10 @@ HARDWARE_MOTHERBOARD ?= 43
 # Arduino source install directory, and version number
 # On most linuxes this will be /usr/share/arduino
 ARDUINO_INSTALL_DIR  ?= /opt/arduino-1.6.8/
-ARDUINO_VERSION      ?= 168
+ARDUINO_VERSION      ?= 10608
 
 # You can optionally set a path to the avr-gcc tools. Requires a trailing slash. (ex: /usr/local/avr-gcc/bin)
-AVR_TOOLS_PATH ?=
+AVR_TOOLS_PATH ?= $(ARDUINO_INSTALL_DIR)/hardware/tools/avr/bin/
 
 #Programmer configuration
 UPLOAD_RATE        ?= 115200
@@ -55,7 +55,7 @@ UPLOAD_PORT        ?= /dev/ttyACM0
 
 #Directory used to build files in, contains all the build files, from object files to the final hex file
 #on linux it is best to put an absolute path like /home/username/tmp .
-BUILD_DIR          ?= applet
+BUILD_DIR          ?= /home/andy/tmp/marlin/
 
 # This defines whether Liquid_TWI2 support will be built
 LIQUID_TWI2        ?= 0
@@ -109,6 +109,7 @@ HARDWARE_VARIANT ?= arduino
 MCU              ?= atmega2560
 else ifeq  ($(HARDWARE_MOTHERBOARD),43)
 HARDWARE_VARIANT ?= arduino
+MCU_PLATFORM     ?= avr
 MCU              ?= atmega2560
 else ifeq  ($(HARDWARE_MOTHERBOARD),44)
 HARDWARE_VARIANT ?= arduino
@@ -216,6 +217,9 @@ MCU              ?= atmega2560
 
 endif
 
+ifndef MCU_PLATFORM
+$(error	ERROR-- DEFINE MCU PLATFORM FOR THIS BOARD (See board 43 for example))
+endif
 # Be sure to regenerate speed_lookuptable.h with create_speed_lookuptable.py
 # if you are setting this to something other than 16MHz
 # Set to 16Mhz if not yet set.
@@ -234,7 +238,7 @@ else
 HARDWARE_DIR = ../ArduinoAddons/Arduino_0.xx
 endif
 endif
-HARDWARE_SRC = $(HARDWARE_DIR)/$(HARDWARE_VARIANT)/cores/arduino
+HARDWARE_SRC = $(HARDWARE_DIR)/$(HARDWARE_VARIANT)/$(MCU_PLATFORM)/cores/arduino
 
 TARGET = $(notdir $(CURDIR))
 
@@ -246,11 +250,11 @@ VPATH = .
 VPATH += $(BUILD_DIR)
 VPATH += $(HARDWARE_SRC)
 ifeq ($(HARDWARE_VARIANT), $(filter $(HARDWARE_VARIANT),arduino Teensy))
-VPATH += $(ARDUINO_INSTALL_DIR)/libraries/LiquidCrystal
-VPATH += $(ARDUINO_INSTALL_DIR)/libraries/SPI
+VPATH += $(ARDUINO_INSTALL_DIR)/libraries/LiquidCrystal/src
+VPATH += $(ARDUINO_INSTALL_DIR)/hardware/$(HARDWARE_VARIANT)/$(MCU_PLATFORM)/libraries/SPI/src
 ifeq ($(LIQUID_TWI2), 1)
-VPATH += $(ARDUINO_INSTALL_DIR)/libraries/Wire
-VPATH += $(ARDUINO_INSTALL_DIR)/libraries/Wire/utility
+VPATH += $(ARDUINO_INSTALL_DIR)/hardware/$(HARDWARE_VARIANT)/$(MCU_PLATFORM)/libraries/Wire
+VPATH += $(ARDUINO_INSTALL_DIR)/hardware/$(HARDWARE_VARIANT)/$(MCU_PLATFORM)/libraries/Wire/src/utility
 VPATH += $(ARDUINO_INSTALL_DIR)/libraries/LiquidTWI2
 endif
 ifeq ($(WIRE), 1)
@@ -258,8 +262,8 @@ VPATH += $(ARDUINO_INSTALL_DIR)/libraries/Wire
 VPATH += $(ARDUINO_INSTALL_DIR)/libraries/Wire/utility
 endif
 else
-VPATH += $(HARDWARE_DIR)/libraries/LiquidCrystal
-VPATH += $(HARDWARE_DIR)/libraries/SPI
+VPATH += $(HARDWARE_DIR)/libraries/LiquidCrystal/src
+VPATH += $(ARDUINO_INSTALL_DIR)/hardware/$(HARDWARE_VARIANT)/$(MCU_PLATFORM)/libraries/SPI/src
 ifeq ($(LIQUID_TWI2), 1)
 VPATH += $(HARDWARE_DIR)/libraries/Wire
 VPATH += $(HARDWARE_DIR)/libraries/Wire/utility
@@ -272,15 +276,16 @@ endif
 endif
 ifeq ($(HARDWARE_VARIANT), arduino)
 HARDWARE_SUB_VARIANT ?= mega
-VPATH += $(ARDUINO_INSTALL_DIR)/hardware/arduino/variants/$(HARDWARE_SUB_VARIANT)
+VPATH += $(ARDUINO_INSTALL_DIR)/hardware/arduino/$(MCU_PLATFORM)/variants/$(HARDWARE_SUB_VARIANT)
 else
 HARDWARE_SUB_VARIANT ?= standard
-VPATH += $(HARDWARE_DIR)/$(HARDWARE_VARIANT)/variants/$(HARDWARE_SUB_VARIANT)
+VPATH += $(HARDWARE_DIR)/$(HARDWARE_VARIANT)/$(MCU_PLATFORM)/variants/$(HARDWARE_SUB_VARIANT)
 endif
 SRC = wiring.c \
 	wiring_analog.c wiring_digital.c \
 	wiring_pulse.c \
-	wiring_shift.c WInterrupts.c
+	wiring_shift.c WInterrupts.c \
+	hooks.c
 ifeq ($(HARDWARE_VARIANT), Teensy)
 SRC = wiring.c
 VPATH += $(ARDUINO_INSTALL_DIR)/hardware/teensy/cores/teensy
@@ -290,7 +295,8 @@ CXXSRC = WMath.cpp WString.cpp Print.cpp Marlin_main.cpp	\
 	SdFile.cpp SdVolume.cpp planner.cpp stepper.cpp \
 	temperature.cpp cardreader.cpp configuration_store.cpp \
 	watchdog.cpp SPI.cpp servo.cpp Tone.cpp ultralcd.cpp digipot_mcp4451.cpp \
-	dac_mcp4728.cpp vector_3.cpp qr_solve.cpp buzzer.cpp
+	dac_mcp4728.cpp vector_3.cpp qr_solve.cpp buzzer.cpp \
+	stopwatch.cpp
 ifeq ($(LIQUID_TWI2), 0)
 CXXSRC += LiquidCrystal.cpp
 else
@@ -325,13 +331,13 @@ OPT = s
 DEFINES ?=
 
 # Program settings
-CC = $(AVR_TOOLS_PATH)avr-gcc
-CXX = $(AVR_TOOLS_PATH)avr-g++
-OBJCOPY = $(AVR_TOOLS_PATH)avr-objcopy
-OBJDUMP = $(AVR_TOOLS_PATH)avr-objdump
-AR  = $(AVR_TOOLS_PATH)avr-ar
-SIZE = $(AVR_TOOLS_PATH)avr-size
-NM = $(AVR_TOOLS_PATH)avr-nm
+CC = $(AVR_TOOLS_PATH)/avr-gcc
+CXX = $(AVR_TOOLS_PATH)/avr-g++
+OBJCOPY = $(AVR_TOOLS_PATH)/avr-objcopy
+OBJDUMP = $(AVR_TOOLS_PATH)/avr-objdump
+AR  = $(AVR_TOOLS_PATH)/avr-ar
+SIZE = $(AVR_TOOLS_PATH)/avr-size
+NM = $(AVR_TOOLS_PATH)/avr-nm
 AVRDUDE = avrdude
 REMOVE = rm -f
 MV = mv -f
